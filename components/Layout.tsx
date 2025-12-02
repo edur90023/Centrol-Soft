@@ -7,8 +7,7 @@ import {
   LogOut, 
   ShieldCheck, 
   Menu,
-  X,
-  Cpu
+  X
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -16,7 +15,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, loadingAuth, logout, isDemoMode } = useApp();
+  const { user, loadingAuth, logout } = useApp();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
@@ -63,15 +62,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span className="text-xl font-bold tracking-wider">ADMIN<span className="text-brand-500">SaaS</span></span>
           </div>
 
-          {/* Demo Mode Banner */}
-          {isDemoMode && (
-            <div className="bg-amber-500/10 border-b border-amber-500/20 py-2 px-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-xs font-bold text-amber-500 uppercase tracking-wide">
-                <Cpu className="w-3 h-3" /> Modo Demo Local
-              </div>
-            </div>
-          )}
-
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navItems.map((item) => (
               <Link
@@ -99,7 +89,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               Cerrar Sesión
             </button>
             <div className="mt-4 text-xs text-slate-500 text-center">
-              v1.0.0 Alpha {isDemoMode ? '(Demo)' : ''}
+              v1.0.0 Alpha
             </div>
           </div>
         </div>
