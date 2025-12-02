@@ -33,7 +33,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [clients, setClients] = useState<ClientProject[]>([]);
   const [loadingData, setLoadingData] = useState(false);
 
-  // 1. Auth Listener (Solo Real)
+  // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -42,7 +42,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => unsubscribe();
   }, []);
 
-  // 2. Data Listener (Solo Real)
+  // Data Listener
   useEffect(() => {
     if (!user) {
       setClients([]);
@@ -67,8 +67,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => unsubscribe();
   }, [user]);
 
-  // --- ACTIONS (Solo Reales) ---
-
+  // Actions
   const logout = async () => {
     await firebaseSignOut(auth);
   };
