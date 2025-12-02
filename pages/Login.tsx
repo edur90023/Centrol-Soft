@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useApp } from '../store/AppContext';
-import { Shield, Lock, ArrowRight, AlertCircle, Cpu } from 'lucide-react';
+import { Shield, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +11,7 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, loginDemo } = useApp();
+  const { user } = useApp();
 
   if (user) return <Navigate to="/" replace />;
 
@@ -29,11 +29,6 @@ export const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoLogin = () => {
-    loginDemo();
-    navigate('/');
   };
 
   return (
@@ -95,24 +90,6 @@ export const Login: React.FC = () => {
               {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Opciones de Desarrollo</span>
-            </div>
-          </div>
-
-          <button 
-            type="button"
-            onClick={handleDemoLogin}
-            className="w-full bg-white border-2 border-slate-200 text-slate-600 py-2.5 rounded-xl font-medium hover:bg-slate-50 hover:border-slate-300 transition-colors flex items-center justify-center gap-2"
-          >
-            <Cpu className="w-4 h-4" />
-            Acceso Provisorio (Modo Demo)
-          </button>
         </div>
         <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
           <p className="text-xs text-slate-400">Acceso restringido. IP registrada.</p>
