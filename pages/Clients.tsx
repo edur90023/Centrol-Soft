@@ -3,8 +3,8 @@ import { useApp } from '../store/AppContext';
 import { ClientProject, PaymentStatus } from '../types';
 import { 
   Plus, Search, Globe, Phone, Power, Eye, 
-  Server, Database, Code, GitBranch, Mail, Key, MessageCircle, Copy, CheckCircle, ShieldAlert,
-  Pencil, Calendar, CreditCard, CheckSquare, X, FileText, Send
+  Server, Database, Code, GitBranch, Mail, Key, Copy, CheckCircle, ShieldAlert,
+  Pencil, CreditCard, FileText, Send, FileEdit
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { PaymentStatusBadge, ActiveStatusBadge } from '../components/StatusBadge';
@@ -37,6 +37,7 @@ export const Clients: React.FC = () => {
     clientEmail: '',
     projectUrl: '',
     repoUrl: '',
+    configFileUrl: '', // <--- NUEVO CAMPO
     backendTech: '',
     frontendTech: '',
     dbTech: '',
@@ -89,6 +90,7 @@ export const Clients: React.FC = () => {
           clientEmail: formData.clientEmail || '',
           projectUrl: formData.projectUrl || '',
           repoUrl: formData.repoUrl || '',
+          configFileUrl: formData.configFileUrl || '', // <--- GUARDAR EL DATO
           backendTech: formData.backendTech || '',
           frontendTech: formData.frontendTech || '',
           dbTech: formData.dbTech || '',
@@ -274,17 +276,29 @@ export const useLicenseCheck = () => {
                    <span className="text-sm font-medium">Detalles</span>
                  </button>
                  
-                 {/* THE KILL SWITCH BUTTON */}
+                 {/* BOTÓN KILL SWITCH MANUAL (NUEVO) */}
                  <button 
-                  onClick={() => toggleClientStatus(client.id, client.isActive)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    client.isActive 
-                      ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700' 
-                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
-                  }`}
+                  onClick={() => {
+                    if (client.configFileUrl) {
+                      window.open(client.configFileUrl, '_blank');
+                    } else {
+                      // Fallback: Intentar construir la URL si no existe la específica
+                      if (client.repoUrl) {
+                         const cleanRepo = client.repoUrl.replace(/\/$/, '').replace(/\.git$/, '');
+                         const guessUrl = `${cleanRepo}/edit/main/config.ts`;
+                         if(window.confirm(`No hay URL de edición configurada. ¿Intentar abrir ${guessUrl}?`)) {
+                            window.open(guessUrl, '_blank');
+                         }
+                      } else {
+                         alert('Por favor configura la URL del archivo en "Editar Cliente".');
+                      }
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-slate-800 text-white hover:bg-slate-700 shadow-sm border border-slate-700"
+                  title="Abrir archivo config.ts para editar manualmente"
                  >
-                   <Power className="w-4 h-4" />
-                   {client.isActive ? 'Kill Switch' : 'Activar'}
+                   <FileEdit className="w-4 h-4 text-red-400" />
+                   Gestionar Licencia
                  </button>
                </div>
             </div>
@@ -300,7 +314,7 @@ export const useLicenseCheck = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-2">
           
-          {/* Status & Payment (Only show prominent on edit, but available on create) */}
+          {/* Status & Payment */}
           <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
              <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
                <CreditCard className="w-3 h-3" /> Estado y Facturación
@@ -315,7 +329,7 @@ export const useLicenseCheck = () => {
                     className="w-4 h-4 text-brand-600 rounded focus:ring-brand-500"
                  />
                  <label htmlFor="isActive" className="text-sm font-medium text-slate-700 select-none cursor-pointer">
-                   Servicio Activo (Kill Switch)
+                   Servicio Activo (Reflejado en DB)
                  </label>
                </div>
 
@@ -387,16 +401,33 @@ export const useLicenseCheck = () => {
                   value={formData.dbTech} onChange={e => setFormData({...formData, dbTech: e.target.value})} />
                 <input placeholder="Storage (ej: S3)" className="p-2 border rounded text-sm"
                   value={formData.storageTech} onChange={e => setFormData({...formData, storageTech: e.target.value})} />
+                
                 <div className="col-span-2">
-                  <input placeholder="URL Repositorio" className="w-full p-2 border rounded text-sm"
+                  <label className="block text-xs font-medium text-slate-700 mb-1">URL Repositorio Principal</label>
+                  <input placeholder="https://github.com/usuario/proyecto" className="w-full p-2 border rounded text-sm"
                     value={formData.repoUrl} onChange={e => setFormData({...formData, repoUrl: e.target.value})} />
                 </div>
+
+                {/* --- NUEVO CAMPO URL CONFIG --- */}
+                <div className="col-span-2 bg-red-50 p-2 rounded border border-red-100">
+                  <label className="block text-xs font-bold text-red-700 mb-1 flex items-center gap-1">
+                    <FileEdit size={12}/> URL de Edición (Kill Switch)
+                  </label>
+                  <input 
+                    placeholder="https://github.com/usr/repo/edit/main/config.ts" 
+                    className="w-full p-2 border border-red-200 rounded text-sm text-red-800 placeholder:text-red-300 focus:ring-2 focus:ring-red-200 outline-none"
+                    value={formData.configFileUrl} 
+                    onChange={e => setFormData({...formData, configFileUrl: e.target.value})} 
+                  />
+                  <p className="text-[10px] text-red-400 mt-1">Pega aquí el link directo para editar el archivo de configuración.</p>
+                </div>
+                
                 <div className="col-span-2">
-                  <input placeholder="URL Proyecto (Web Pública)" className="w-full p-2 border rounded text-sm"
+                  <label className="block text-xs font-medium text-slate-700 mb-1">URL Proyecto (Web Pública)</label>
+                  <input placeholder="https://mi-proyecto.com" className="w-full p-2 border rounded text-sm"
                     value={formData.projectUrl} onChange={e => setFormData({...formData, projectUrl: e.target.value})} />
                 </div>
                 
-                {/* Admin Credentials */}
                 <div className="col-span-2 border-t border-slate-200 mt-2 pt-2">
                   <label className="block text-xs font-medium text-slate-500 mb-2">Credenciales App Superadmin</label>
                   <div className="grid grid-cols-2 gap-3">
@@ -502,6 +533,15 @@ export const useLicenseCheck = () => {
                           </a>
                         </div>
                       </div>
+                      {/* URL Config Display */}
+                      {selectedClient.configFileUrl && (
+                        <div className="col-span-2">
+                          <span className="block text-slate-400 text-xs mb-1">URL Configuración (Manual)</span>
+                          <div className="font-mono text-xs text-slate-600 bg-white p-1 rounded border border-slate-200 truncate">
+                            {selectedClient.configFileUrl}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -605,10 +645,11 @@ export const useLicenseCheck = () => {
                         <ShieldAlert className="w-4 h-4" />
                       </div>
                       <div>
-                        <h5 className="text-sm font-bold text-blue-800">Modo de Integración</h5>
+                        <h5 className="text-sm font-bold text-blue-800">Modo de Integración (Automático)</h5>
                         <p className="text-sm text-blue-700 mt-1 leading-relaxed">
-                          Para habilitar el control remoto ("Kill Switch"), instala el siguiente hook en la aplicación del cliente.
-                          Este código escuchará en tiempo real el estado de la licencia.
+                          Este modo conecta la App a tu Firebase.
+                          <br/>
+                          <span className="font-bold">Para modo manual (GitHub):</span> Usa el botón "Gestionar Licencia" en la lista principal.
                         </p>
                       </div>
                    </div>
