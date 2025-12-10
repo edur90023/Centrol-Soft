@@ -1,5 +1,3 @@
-// Archivo: src/types.ts
-
 export enum PaymentStatus {
   UpToDate = 'up_to_date',
   Pending = 'pending',
@@ -16,22 +14,20 @@ export interface ClientProject {
   
   // Tech Stack Details
   repoUrl?: string;
-  // --- NUEVO CAMPO ---
-  configFileUrl?: string; // Link directo a la edición del archivo config.ts
-  // -------------------
+  configFileUrl?: string; // <--- NUEVO CAMPO AGREGADO
   backendTech?: string;
   frontendTech?: string;
   dbTech?: string;
-  storageTech?: string;
+  storageTech?: string; // Image DB
   
   // Access Credentials
   appAdminEmail?: string;
   appAdminPassword?: string;
   
-  licenseKey: string;
-  isActive: boolean;
+  licenseKey: string; // UUID
+  isActive: boolean; // THE KILL SWITCH
   paymentStatus: PaymentStatus;
-  nextPaymentDate: string;
+  nextPaymentDate: string; // ISO Date string
   monthlyFee: number;
 }
 
