@@ -1,3 +1,4 @@
+// ARCHIVO: src/components/Layout.tsx
 import React from 'react';
 import { useApp } from '../store/AppContext';
 import { Link, useLocation, Navigate } from 'react-router-dom';
@@ -7,7 +8,9 @@ import {
   LogOut, 
   ShieldCheck, 
   Menu,
-  X
+  X,
+  Mail, // Nuevo Icono
+  Github // Nuevo Icono
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -38,6 +41,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Clientes', path: '/clients', icon: Users },
+    // Nuevas Rutas
+    { label: 'Cuentas Correo', path: '/emails', icon: Mail },
+    { label: 'Repositorios', path: '/repos', icon: Github },
   ];
 
   return (
@@ -89,7 +95,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               Cerrar Sesión
             </button>
             <div className="mt-4 text-xs text-slate-500 text-center">
-              v1.0.0 Alpha
+              v1.1.0 Beta
             </div>
           </div>
         </div>
