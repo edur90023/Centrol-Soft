@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { Mail, Plus, Trash2, Eye, EyeOff, Copy, CheckCircle, Search } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { encryptData, decryptData } from '../utils/security';
 
 export const Emails: React.FC = () => {
   const { emails, addEmail, deleteEmail } = useApp();
@@ -23,7 +24,12 @@ export const Emails: React.FC = () => {
     e.preventDefault();
     if (!formData.email || !formData.password) return;
     
-    await addEmail(formData);
+    // ENCRIPTAR LA CONTRASEÑA ANTES DE ENVIAR
+    await addEmail({
+      ...formData,
+      password: encryptData(formData.password)
+    });
+
     setIsModalOpen(false);
     setFormData({ email: '', password: '', provider: 'Gmail', recoveryEmail: '', notes: '' });
   };
@@ -76,61 +82,66 @@ export const Emails: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredEmails.map((account) => (
-          <div key={account.id} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all relative group">
-            <button 
-              onClick={() => handleDelete(account.id)}
-              className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+        {filteredEmails.map((account) => {
+          // DESENCRIPTAR PARA VISUALIZAR
+          const realPassword = decryptData(account.password);
 
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-800 truncate max-w-[150px]">{account.provider}</h3>
-                <span className="text-xs text-slate-500">Proveedor</span>
-              </div>
-            </div>
+          return (
+            <div key={account.id} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all relative group">
+              <button 
+                onClick={() => handleDelete(account.id)}
+                className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
 
-            <div className="space-y-3 text-sm">
-              <div className="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between items-center">
-                <span className="font-medium text-slate-700 truncate mr-2">{account.email}</span>
-                <button onClick={() => copyToClipboard(account.email, `e-${account.id}`)} className="text-slate-400 hover:text-brand-600">
-                  {copiedId === `e-${account.id}` ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                </button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 truncate max-w-[150px]">{account.provider}</h3>
+                  <span className="text-xs text-slate-500">Proveedor</span>
+                </div>
               </div>
 
-              <div className="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between items-center">
-                <span className="font-mono text-slate-700 truncate mr-2">
-                  {visiblePasswords[account.id] ? account.password : '••••••••••••'}
-                </span>
-                <div className="flex gap-2">
-                  <button onClick={() => togglePasswordVisibility(account.id)} className="text-slate-400 hover:text-brand-600">
-                    {visiblePasswords[account.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                  <button onClick={() => copyToClipboard(account.password, `p-${account.id}`)} className="text-slate-400 hover:text-brand-600">
-                    {copiedId === `p-${account.id}` ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              <div className="space-y-3 text-sm">
+                <div className="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between items-center">
+                  <span className="font-medium text-slate-700 truncate mr-2">{account.email}</span>
+                  <button onClick={() => copyToClipboard(account.email, `e-${account.id}`)} className="text-slate-400 hover:text-brand-600">
+                    {copiedId === `e-${account.id}` ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-              </div>
 
-              {account.recoveryEmail && (
-                <div className="text-xs text-slate-500">
-                  <span className="font-semibold">Recuperación:</span> {account.recoveryEmail}
+                <div className="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between items-center">
+                  <span className="font-mono text-slate-700 truncate mr-2">
+                    {visiblePasswords[account.id] ? realPassword : '••••••••••••'}
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={() => togglePasswordVisibility(account.id)} className="text-slate-400 hover:text-brand-600">
+                      {visiblePasswords[account.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <button onClick={() => copyToClipboard(realPassword, `p-${account.id}`)} className="text-slate-400 hover:text-brand-600">
+                      {copiedId === `p-${account.id}` ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              )}
-              
-              {account.notes && (
-                <div className="text-xs text-slate-500 italic border-t border-slate-100 pt-2 mt-2">
-                  "{account.notes}"
-                </div>
-              )}
+
+                {account.recoveryEmail && (
+                  <div className="text-xs text-slate-500">
+                    <span className="font-semibold">Recuperación:</span> {account.recoveryEmail}
+                  </div>
+                )}
+                
+                {account.notes && (
+                  <div className="text-xs text-slate-500 italic border-t border-slate-100 pt-2 mt-2">
+                    "{account.notes}"
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Agregar Cuenta de Correo">
