@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { Github, Plus, Trash2, Eye, EyeOff, Copy, CheckCircle, Search, ExternalLink, GitBranch } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { encryptData, decryptData } from '../utils/security';
 
 export const Repositories: React.FC = () => {
   const { repos, addRepo, deleteRepo } = useApp();
@@ -24,7 +25,12 @@ export const Repositories: React.FC = () => {
     e.preventDefault();
     if (!formData.name || !formData.url) return;
     
-    await addRepo(formData);
+    // ENCRIPTAR TOKEN
+    await addRepo({
+      ...formData,
+      tokenOrPassword: encryptData(formData.tokenOrPassword)
+    });
+
     setIsModalOpen(false);
     setFormData({ name: '', platform: 'github', url: '', username: '', tokenOrPassword: '', notes: '' });
   };
@@ -74,69 +80,73 @@ export const Repositories: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredRepos.map((repo) => (
-          <div key={repo.id} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all relative group">
-            <button 
-              onClick={() => handleDelete(repo.id)}
-              className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+        {filteredRepos.map((repo) => {
+            const realToken = decryptData(repo.tokenOrPassword);
 
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
-                <Github className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-800 truncate max-w-[150px]">{repo.name}</h3>
-                <span className="text-xs text-slate-500 uppercase">{repo.platform}</span>
-              </div>
-            </div>
+            return (
+              <div key={repo.id} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all relative group">
+                <button 
+                  onClick={() => handleDelete(repo.id)}
+                  className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
 
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-2 text-slate-600">
-                 <ExternalLink className="w-3 h-3" />
-                 <a href={repo.url} target="_blank" rel="noreferrer" className="truncate hover:text-blue-600 hover:underline">
-                   {repo.url}
-                 </a>
-              </div>
-
-              <div className="bg-slate-50 p-2 rounded border border-slate-100">
-                <div className="text-xs text-slate-400 mb-1">Usuario / Owner</div>
-                <div className="flex justify-between items-center">
-                    <span className="font-medium text-slate-700">{repo.username}</span>
-                    <button onClick={() => copyToClipboard(repo.username, `u-${repo.id}`)} className="text-slate-400 hover:text-slate-600">
-                        {copiedId === `u-${repo.id}` ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    </button>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700">
+                    <Github className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 truncate max-w-[150px]">{repo.name}</h3>
+                    <span className="text-xs text-slate-500 uppercase">{repo.platform}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-slate-50 p-2 rounded border border-slate-100">
-                <div className="text-xs text-slate-400 mb-1">Token / Password</div>
-                <div className="flex justify-between items-center">
-                    <span className="font-mono text-slate-700 truncate mr-2">
-                    {visibleTokens[repo.id] ? repo.tokenOrPassword : '••••••••••••'}
-                    </span>
-                    <div className="flex gap-2">
-                    <button onClick={() => toggleVisibility(repo.id)} className="text-slate-400 hover:text-slate-600">
-                        {visibleTokens[repo.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    </button>
-                    <button onClick={() => copyToClipboard(repo.tokenOrPassword, `t-${repo.id}`)} className="text-slate-400 hover:text-slate-600">
-                        {copiedId === `t-${repo.id}` ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    </button>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <ExternalLink className="w-3 h-3" />
+                    <a href={repo.url} target="_blank" rel="noreferrer" className="truncate hover:text-blue-600 hover:underline">
+                      {repo.url}
+                    </a>
+                  </div>
+
+                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                    <div className="text-xs text-slate-400 mb-1">Usuario / Owner</div>
+                    <div className="flex justify-between items-center">
+                        <span className="font-medium text-slate-700">{repo.username}</span>
+                        <button onClick={() => copyToClipboard(repo.username, `u-${repo.id}`)} className="text-slate-400 hover:text-slate-600">
+                            {copiedId === `u-${repo.id}` ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        </button>
                     </div>
+                  </div>
+
+                  <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                    <div className="text-xs text-slate-400 mb-1">Token / Password</div>
+                    <div className="flex justify-between items-center">
+                        <span className="font-mono text-slate-700 truncate mr-2">
+                        {visibleTokens[repo.id] ? realToken : '••••••••••••'}
+                        </span>
+                        <div className="flex gap-2">
+                        <button onClick={() => toggleVisibility(repo.id)} className="text-slate-400 hover:text-slate-600">
+                            {visibleTokens[repo.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </button>
+                        <button onClick={() => copyToClipboard(realToken, `t-${repo.id}`)} className="text-slate-400 hover:text-slate-600">
+                            {copiedId === `t-${repo.id}` ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                        </div>
+                    </div>
+                  </div>
+
+                  {repo.notes && (
+                    <div className="text-xs text-slate-500 italic border-t border-slate-100 pt-2 mt-2">
+                      <GitBranch className="w-3 h-3 inline mr-1" />
+                      "{repo.notes}"
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {repo.notes && (
-                <div className="text-xs text-slate-500 italic border-t border-slate-100 pt-2 mt-2">
-                  <GitBranch className="w-3 h-3 inline mr-1" />
-                  "{repo.notes}"
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+            );
+        })}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Agregar Repositorio">
