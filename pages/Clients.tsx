@@ -4,14 +4,14 @@ import { ClientProject, PaymentStatus } from '../types';
 import { 
   Plus, Search, Globe, Phone, Eye, 
   Server, Database, Code, GitBranch, Mail, Key, Copy, CheckCircle, ShieldAlert,
-  Pencil, FileText, Send, FileEdit
+  Pencil, FileText, Send, FileEdit, Power
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { ClientFormModal } from '../components/ClientFormModal';
 import { PaymentStatusBadge, ActiveStatusBadge } from '../components/StatusBadge';
 
 export const Clients: React.FC = () => {
-  const { clients } = useApp();
+  const { clients, toggleClientStatus } = useApp();
   
   // States
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -47,6 +47,13 @@ export const Clients: React.FC = () => {
     setFormMode('edit'); setEditingId(client.id); setFormData({ ...client }); setIsFormOpen(true);
   };
 
+  const handleToggleStatus = async (client: ClientProject) => {
+    const action = client.isActive ? 'SUSPENDER' : 'REACTIVAR';
+    if (window.confirm(`¿Estás seguro de que deseas ${action} el servicio para ${client.businessName}?`)) {
+       await toggleClientStatus(client.id, client.isActive);
+    }
+  };
+
   const handleGenerateReport = () => {
     if (!selectedClient) return;
     const isOverdue = selectedClient.paymentStatus === PaymentStatus.Overdue;
@@ -74,7 +81,8 @@ export const Clients: React.FC = () => {
   };
 
   const generateSnippet = (client: ClientProject) => {
-    return `// HOOK DE LICENCIA (Kill Switch) - ${client.businessName}\n// src/hooks/useLicenseCheck.ts\nimport { useEffect, useState } from 'react';\nimport { doc, onSnapshot } from 'firebase/firestore';\nimport { db } from '../firebase';\n\nexport const useLicenseCheck = () => {\n  const [isLocked, setIsLocked] = useState(false);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    const clientRef = doc(db, 'clients', '${client.id}');\n    const unsubscribe = onSnapshot(clientRef, (docSnapshot) => {\n      if (docSnapshot.exists()) {\n        const data = docSnapshot.data();\n        setIsLocked(data.isActive === false);\n      } else {\n        setIsLocked(true); \n      }\n      setLoading(false);\n    }, (error) => setLoading(false));\n    return () => unsubscribe();\n  }, []);\n  return { isLocked, loading };\n};`;
+    // Generamos un snippet que apunte a la colección 'clients' y el ID específico
+    return `// HOOK DE LICENCIA (Kill Switch) - ${client.businessName}\n// ID Cliente: ${client.id}\n// src/hooks/useLicense.ts\nimport { useEffect, useState } from 'react';\nimport { doc, onSnapshot } from 'firebase/firestore';\nimport { licenseDb } from '../services/licenseService';\n\nexport const useLicense = () => {\n  const [isLocked, setIsLocked] = useState(false);\n  const [loading, setLoading] = useState(true);\n  // ID configurado en .env como VITE_LICENSE_CLIENT_ID = ${client.id}\n  const LICENSE_ID = import.meta.env.VITE_LICENSE_CLIENT_ID || '${client.id}';\n\n  useEffect(() => {\n    const clientRef = doc(licenseDb, 'clients', LICENSE_ID);\n    const unsubscribe = onSnapshot(clientRef, (docSnapshot) => {\n      if (docSnapshot.exists()) {\n        setIsLocked(docSnapshot.data().isActive === false);\n      } else {\n        setIsLocked(true);\n      }\n      setLoading(false);\n    }, (error) => setLoading(false));\n    return () => unsubscribe();\n  }, []);\n  return { isLocked, loading };\n};`;
   };
 
   const filteredClients = clients.filter(c => 
@@ -106,17 +114,23 @@ export const Clients: React.FC = () => {
         {filteredClients.map((client) => (
           <div key={client.id} className={`rounded-xl p-5 border transition-all ${
             !client.isActive 
-              ? 'bg-slate-900/30 border-slate-800 opacity-60' 
+              ? 'bg-red-950/20 border-red-900/30' 
               : 'bg-slate-900/60 backdrop-blur-md border-white/10 hover:border-brand-500/30 hover:shadow-lg hover:shadow-brand-500/10'
           }`}>
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="font-bold text-lg text-slate-100">{client.businessName}</h3>
+                <h3 className="font-bold text-lg text-slate-100 flex items-center gap-2">
+                  {client.businessName}
+                  {!client.isActive && <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">Suspendido</span>}
+                </h3>
                 <p className="text-sm text-slate-400">{client.clientName}</p>
               </div>
               <div className="flex flex-col items-end gap-2">
                  <PaymentStatusBadge status={client.paymentStatus} />
-                 <ActiveStatusBadge isActive={client.isActive} />
+                 {/* ID para copiar fácil */}
+                 <button onClick={() => copyToClipboard(client.id, `id-${client.id}`)} className="text-[10px] font-mono text-slate-600 hover:text-brand-400 transition-colors" title="Copiar ID Cliente">
+                   ID: {client.id.substring(0,8)}... {copiedId === `id-${client.id}` ? '(Copiado)' : ''}
+                 </button>
               </div>
             </div>
 
@@ -134,9 +148,20 @@ export const Clients: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
-               <div>
-                 <span className="text-xs text-slate-500 uppercase tracking-wide">Cuota Mensual</span>
-                 <p className="font-semibold text-slate-200">${client.monthlyFee}</p>
+               <div className="flex items-center gap-2">
+                 {/* BOTÓN KILL SWITCH AUTOMÁTICO */}
+                 <button 
+                  onClick={() => handleToggleStatus(client)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all border ${
+                    client.isActive 
+                    ? 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' 
+                    : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'
+                  }`}
+                  title={client.isActive ? "Suspender Servicio Automáticamente" : "Reactivar Servicio"}
+                 >
+                   <Power className="w-4 h-4" />
+                   {client.isActive ? 'Cortar' : 'Activar'}
+                 </button>
                </div>
                
                <div className="flex gap-2">
@@ -144,19 +169,22 @@ export const Clients: React.FC = () => {
                    <Pencil className="w-4 h-4" />
                  </button>
                  <button onClick={() => { setSelectedClient(client); setDetailsTab('info'); }} className="flex items-center gap-2 px-3 py-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                   <Eye className="w-4 h-4" /> <span className="text-sm font-medium">Detalles</span>
+                   <Eye className="w-4 h-4" />
                  </button>
+                 
+                 {/* BOTÓN MANUAL (GitHub) - Mantenido como respaldo */}
                  <button onClick={() => {
                     if (client.configFileUrl) window.open(client.configFileUrl, '_blank');
                     else if (client.repoUrl) {
                          const cleanRepo = client.repoUrl.replace(/\/$/, '').replace(/\.git$/, '');
                          const guessUrl = `${cleanRepo}/edit/main/config.ts`;
-                         if(window.confirm(`No hay URL. ¿Intentar abrir ${guessUrl}?`)) window.open(guessUrl, '_blank');
+                         if(window.confirm(`Abrir repositorio para edición manual en: ${guessUrl}?`)) window.open(guessUrl, '_blank');
                     } else alert('Configura la URL en "Editar Cliente".');
                   }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-brand-900/20 text-brand-300 border border-brand-500/20 hover:bg-brand-900/40"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                  title="Gestión Manual (GitHub)"
                  >
-                   <FileEdit className="w-4 h-4" /> Licencia
+                   <FileEdit className="w-4 h-4" />
                  </button>
                </div>
             </div>
@@ -238,7 +266,9 @@ export const Clients: React.FC = () => {
                       <div className="mt-0.5 text-blue-400"><ShieldAlert className="w-4 h-4" /></div>
                       <div>
                         <h5 className="text-sm font-bold text-blue-200">Integración Automática</h5>
-                        <p className="text-sm text-blue-300/70 mt-1">Conecta la App a Firebase para control remoto.</p>
+                        <p className="text-sm text-blue-300/70 mt-1">
+                            Este ID <strong>{selectedClient.id}</strong> es el que debes usar en las variables de entorno de la App Cliente.
+                        </p>
                       </div>
                    </div>
                 </div>
