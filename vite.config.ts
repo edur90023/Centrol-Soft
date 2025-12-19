@@ -7,26 +7,26 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.ico', 'pwa-192x192.svg', 'pwa-512x512.svg'], // Incluimos los SVGs
       manifest: {
         name: 'Centrol-Soft Admin',
         short_name: 'CentrolSoft',
         description: 'Panel de Control Administrativo SaaS',
-        theme_color: '#0f172a', // Color slate-950
+        theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png', // Usaremos placeholders si no tienes iconos
+            src: 'pwa-192x192.svg', // Apuntamos al SVG
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml'   // Importante: Cambiar tipo a svg+xml
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'pwa-512x512.svg', // Apuntamos al SVG
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',  // Importante: Cambiar tipo a svg+xml
             purpose: 'any maskable'
           }
         ]
