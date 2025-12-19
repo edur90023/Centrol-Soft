@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'pwa-192x192.svg', 'pwa-512x512.svg'], // Incluimos los SVGs
+      includeAssets: ['favicon.ico', 'pwa-192x192.svg', 'pwa-512x512.svg'],
       manifest: {
         name: 'Centrol-Soft Admin',
         short_name: 'CentrolSoft',
@@ -19,14 +19,14 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.svg', // Apuntamos al SVG
+            src: 'pwa-192x192.svg',
             sizes: '192x192',
-            type: 'image/svg+xml'   // Importante: Cambiar tipo a svg+xml
+            type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.svg', // Apuntamos al SVG
+            src: 'pwa-512x512.svg',
             sizes: '512x512',
-            type: 'image/svg+xml',  // Importante: Cambiar tipo a svg+xml
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]
